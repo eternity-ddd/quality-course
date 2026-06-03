@@ -1,0 +1,13 @@
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.vscode/
+
+# 안전망 (각 하위 프로젝트의 .gitignore가 우선 처리)
+**/build/
+**/.gradle/
