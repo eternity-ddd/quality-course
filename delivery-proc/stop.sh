@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# 백엔드(8080) + 프론트엔드(5173) 중단. (macOS / Linux)
+# 백엔드(8081) + 프론트엔드(5174) 중단. (macOS / Linux)
 cd "$(dirname "$0")"
 
 stopped=0
-for port in 8080 5173; do
+for port in 8081 5174; do
   pids=$(lsof -ti tcp:$port 2>/dev/null || true)
   if [ -n "$pids" ]; then
     echo "▶ 포트 $port 종료 (PID: $pids)"

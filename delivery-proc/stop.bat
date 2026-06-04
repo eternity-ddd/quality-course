@@ -1,9 +1,9 @@
 @echo off
-REM 백엔드(8080) + 프론트엔드(5173) 중단. (Windows)
+REM 백엔드(8081) + 프론트엔드(5174) 중단. (Windows)
 setlocal enabledelayedexpansion
 set found=0
 
-for %%P in (8080 5173) do (
+for %%P in (8081 5174) do (
   for /f "tokens=5" %%I in ('netstat -ano ^| findstr ":%%P " ^| findstr LISTENING') do (
     echo [*] 포트 %%P 종료: PID %%I
     taskkill /F /PID %%I >nul 2>nul

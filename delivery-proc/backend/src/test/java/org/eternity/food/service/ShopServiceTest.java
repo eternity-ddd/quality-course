@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -381,6 +382,155 @@ class ShopServiceTest {
                     .isInstanceOf(IllegalArgumentException.class);
 
             verify(shopRepository, org.mockito.Mockito.never()).save(any(Shop.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("create() — location 불변식")
+    class CreateLocationInvariant {
+
+        @Test
+        @DisplayName("latitude가 null이면 IAE")
+        void latitudeNull() {
+            assertThatThrownBy(() -> shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    null,
+                    126.9780,
+                    3.0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("좌표는 null");
+        }
+
+        @Test
+        @DisplayName("longitude가 null이면 IAE")
+        void longitudeNull() {
+            assertThatThrownBy(() -> shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    37.5665,
+                    null,
+                    3.0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("좌표는 null");
+        }
+
+        @Test
+        @DisplayName("둘 다 null이면 IAE")
+        void bothNull() {
+            assertThatThrownBy(() -> shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    null,
+                    null,
+                    3.0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("좌표는 null");
+        }
+
+        @ParameterizedTest(name = "latitude={0}이면 IAE")
+        @ValueSource(doubles = {-90.0001, -91.0, 90.0001, 91.0, 180.0})
+        @DisplayName("latitude가 -90~90 밖이면 IAE")
+        void latitudeOutOfRange(double latitude) {
+            assertThatThrownBy(() -> shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    latitude,
+                    126.9780,
+                    3.0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("위도는 -90~90");
+        }
+
+        @ParameterizedTest(name = "latitude={0}이면 경계 통과")
+        @ValueSource(doubles = {-90.0, -89.9999, 0.0, 89.9999, 90.0})
+        @DisplayName("latitude가 -90~90 범위 안이면 통과")
+        void latitudeInRange(double latitude) {
+            given(shopRepository.save(any(Shop.class))).willAnswer(inv -> inv.getArgument(0));
+
+            Shop saved = shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    latitude,
+                    126.9780,
+                    3.0);
+
+            assertThat(saved.getLatitude()).isEqualTo(latitude);
+        }
+
+        @ParameterizedTest(name = "longitude={0}이면 IAE")
+        @ValueSource(doubles = {-180.0001, -181.0, 180.0001, 181.0, 360.0})
+        @DisplayName("longitude가 -180~180 밖이면 IAE")
+        void longitudeOutOfRange(double longitude) {
+            assertThatThrownBy(() -> shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    37.5665,
+                    longitude,
+                    3.0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("경도는 -180~180");
+        }
+
+        @ParameterizedTest(name = "longitude={0}이면 경계 통과")
+        @ValueSource(doubles = {-180.0, -179.9999, 0.0, 179.9999, 180.0})
+        @DisplayName("longitude가 -180~180 범위 안이면 통과")
+        void longitudeInRange(double longitude) {
+            given(shopRepository.save(any(Shop.class))).willAnswer(inv -> inv.getArgument(0));
+
+            Shop saved = shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    37.5665,
+                    longitude,
+                    3.0);
+
+            assertThat(saved.getLongitude()).isEqualTo(longitude);
+        }
+
+        @ParameterizedTest(name = "({0}, {1})이면 정상 생성")
+        @CsvSource({
+                "37.5665, 126.9780",
+                "-33.8688, 151.2093",
+                "0.0, 0.0"
+        })
+        @DisplayName("유효 좌표면 latitude/longitude가 그대로 저장된다")
+        void validCoordinatesStored(double lat, double lng) {
+            given(shopRepository.save(any(Shop.class))).willAnswer(inv -> inv.getArgument(0));
+
+            Shop saved = shopService.create(
+                    "오겹돼지집",
+                    13_000L,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(22, 0),
+                    "KOREAN",
+                    lat,
+                    lng,
+                    3.0);
+
+            assertThat(saved.getLatitude()).isEqualTo(lat);
+            assertThat(saved.getLongitude()).isEqualTo(lng);
         }
     }
 

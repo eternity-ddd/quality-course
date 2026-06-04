@@ -48,6 +48,7 @@ public class ShopService {
                        Double longitude,
                        Double deliveryRadius) {
         validateShop(name, minOrderPrice, startTime, endTime);
+        validateLocation(latitude, longitude);
 
         Shop shop = new Shop();
         shop.setName(name);
@@ -87,6 +88,26 @@ public class ShopService {
 
         if (!startTime.isBefore(endTime)) {
             throw new IllegalArgumentException("영업 시작 시각은 종료 시각보다 빨라야 합니다.");
+        }
+    }
+
+    /**
+     * 좌표 검증.
+     * <ul>
+     *   <li>latitude, longitude != null</li>
+     *   <li>latitude ∈ [-90, 90]</li>
+     *   <li>longitude ∈ [-180, 180]</li>
+     * </ul>
+     */
+    void validateLocation(Double latitude, Double longitude) {
+        if (latitude == null || longitude == null) {
+            throw new IllegalArgumentException("좌표는 null이어서는 안됩니다.");
+        }
+        if (latitude < -90 || latitude > 90) {
+            throw new IllegalArgumentException("위도는 -90~90 범위여야 합니다: " + latitude);
+        }
+        if (longitude < -180 || longitude > 180) {
+            throw new IllegalArgumentException("경도는 -180~180 범위여야 합니다: " + longitude);
         }
     }
 
