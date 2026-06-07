@@ -57,12 +57,18 @@ class CartServiceTest {
     private CartService cartService;
 
     @Test
-    @DisplayName("다중 라인 — 라인별 unitPrice × count 합산")
+    @DisplayName("다중 라인 — 라인별 (basePrice + 옵션) × count 합산")
     void multipleLines_sumsCorrectly() {
-        // 라인1: 22,000 × 1 = 22,000
-        CartLineItem line1 = CartLineItem.builder().menuId(1L).unitPrice(22_000L).menuCount(1).build();
-        // 라인2: 23,000 × 2 = 46,000
-        CartLineItem line2 = CartLineItem.builder().menuId(2L).unitPrice(23_000L).menuCount(2).build();
+        // 라인1: basePrice 10,000 + 옵션 12,000 = 22,000 × 1
+        CartLineItem line1 = CartLineItem.builder().menuId(1L).basePrice(10_000L).menuCount(1)
+                .groups(List.of(CartOptionGroup.builder().optionGroupId(1L)
+                        .options(List.of(CartOption.builder().optionId(1L).price(12_000L).build())).build()))
+                .build();
+        // 라인2: basePrice 15,000 + 옵션 8,000 = 23,000 × 2
+        CartLineItem line2 = CartLineItem.builder().menuId(2L).basePrice(15_000L).menuCount(2)
+                .groups(List.of(CartOptionGroup.builder().optionGroupId(2L)
+                        .options(List.of(CartOption.builder().optionId(2L).price(8_000L).build())).build()))
+                .build();
         // 합산: 22,000 + 46,000 = 68,000
         Cart cart = Cart.builder().items(new ArrayList<>(List.of(line1, line2))).build();
 
@@ -82,7 +88,7 @@ class CartServiceTest {
 
         Cart existing = Cart.builder().userId(1L).shopId(99L)
                 .items(new ArrayList<>(List.of(
-                        CartLineItem.builder().menuId(77L).menuCount(1).unitPrice(0L).build())))
+                        CartLineItem.builder().menuId(77L).menuCount(1).basePrice(0L).build())))
                 .build();
 
         given(cartRepository.findByUserId(1L)).willReturn(Optional.of(existing));
@@ -102,7 +108,7 @@ class CartServiceTest {
 
     @Test
     @DisplayName("동일 내용 라인 추가 — 새 라인 생성 대신 기존 라인 count 누적")
-    void sameContent_combinesCount() {
+    void sameContent_combines() {
         Menu menu = Menu.builder().id(1L).shopId(1L).name("삼겹살 1인세트").basePrice(10_000L).status("OPEN")
                 .optionGroups(List.of(MenuOptionGroup.builder().optionGroupId(1L).build())).build();
         OptionGroup og = OptionGroup.builder().id(1L).name("기본")
@@ -110,7 +116,7 @@ class CartServiceTest {
         Shop shop = Shop.builder().id(1L).name("오겹돼지").minOrderPrice(13_000L).build();
 
         CartLineItem existingLine = CartLineItem.builder().id(1L).menuId(1L).menuName("삼겹살 1인세트")
-                .menuCount(1).unitPrice(22_000L)
+                .menuCount(1).basePrice(22_000L)
                 .groups(new ArrayList<>(List.of(
                         CartOptionGroup.builder().id(1L).optionGroupId(1L).name("기본")
                                 .options(new ArrayList<>(List.of(

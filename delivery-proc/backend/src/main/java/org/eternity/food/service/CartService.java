@@ -127,17 +127,23 @@ public class CartService {
                                 g.getName(), co.getName(), co.getPrice(), CartDto.OptionStatus.INVALID));
                     }
                 }
+                long removedUnit = line.getBasePrice();
+                for (CartOptionGroup g2 : line.getGroups()) {
+                    for (CartOption co2 : g2.getOptions()) {
+                        removedUnit += co2.getPrice();
+                    }
+                }
                 resultItems.add(new CartDto.Item(
                         line.getId(),
                         line.getMenuId(),
                         line.getMenuName(),
-                        line.getUnitPrice(),
+                        removedUnit,
                         line.getMenuCount(),
                         opts,
                         CartDto.ItemStatus.MENU_REMOVED,
                         List.of("이 메뉴는 더 이상 판매되지 않습니다.")
                 ));
-                totalPrice += line.getUnitPrice() * line.getMenuCount();
+                totalPrice += removedUnit * line.getMenuCount();
                 continue;
             }
 
@@ -219,7 +225,8 @@ public class CartService {
             }
 
             // 5-D. 라인 상태 결정 (메뉴 OPEN 여부 → 옵션 invalid → 가격 변경 → VALID 순)
-            boolean priceChanged = anyPriceChanged || unitTotal != line.getUnitPrice();
+            boolean basePriceChanged = !Long.valueOf(menu.getBasePrice()).equals(line.getBasePrice());
+            boolean priceChanged = anyPriceChanged || basePriceChanged;
             CartDto.ItemStatus itemStatus;
             if (!MENU_STATUS_OPEN.equals(menu.getStatus())) {
                 itemStatus = CartDto.ItemStatus.MENU_NOT_OPEN;
@@ -284,7 +291,13 @@ public class CartService {
 
         long total = 0L;
         for (CartLineItem line : cart.getItems()) {
-            total += line.getUnitPrice() * line.getMenuCount();
+            long unit = line.getBasePrice();
+            for (CartOptionGroup cg : line.getGroups()) {
+                for (CartOption co : cg.getOptions()) {
+                    unit += co.getPrice();
+                }
+            }
+            total += unit * line.getMenuCount();
         }
         return total;
     }
@@ -394,7 +407,7 @@ public class CartService {
         line.setMenuId(menu.getId());
         line.setMenuName(request.menuName() != null ? request.menuName() : menu.getName());
         line.setMenuCount(request.quantity());
-        line.setUnitPrice(computeUnitPrice(menu, request.selectedOptions()));
+        line.setBasePrice(menu.getBasePrice());
 
         for (Map.Entry<Long, List<SelectedOption>> entry : grouped.entrySet()) {
             CartOptionGroup cog = new CartOptionGroup();
@@ -465,17 +478,7 @@ public class CartService {
         return true;
     }
 
-    private long computeUnitPrice(Menu menu, List<SelectedOption> selected) {
-        long sum = menu.getBasePrice() == null ? 0L : menu.getBasePrice();
-        if (selected != null) {
-            for (SelectedOption sel : selected) {
-                if (sel.price() != null) {
-                    sum += sel.price();
-                }
-            }
-        }
-        return sum;
-    }
+
 
     private Map<Long, List<SelectedOption>> groupSelectedOptions(List<SelectedOption> selected) {
         Map<Long, List<SelectedOption>> grouped = new LinkedHashMap<>();
@@ -713,8 +716,8 @@ public class CartService {
                 }
             }
 
-            // line snapshot unit_price와도 일치
-            if (line.getUnitPrice() == null || line.getUnitPrice() != unit) {
+            // line snapshot base_price와도 일치
+            if (line.getBasePrice() == null || !line.getBasePrice().equals(menu.getBasePrice())) {
                 throw new IllegalStateException("가격이 변경되었습니다: " + line.getMenuName());
             }
 

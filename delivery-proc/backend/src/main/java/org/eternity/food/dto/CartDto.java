@@ -34,7 +34,7 @@ public final class CartDto {
             Long id,
             Long menuId,
             String menuName,
-            long unitPrice,
+            long basePrice,
             int quantity,
             List<Option> selectedOptions,
             ItemStatus status,

@@ -44,8 +44,8 @@ public class CartLineItem {
     @Column(name = "menu_count")
     private Integer menuCount;
 
-    @Column(name = "unit_price")
-    private Long unitPrice;
+    @Column(name = "base_price")
+    private Long basePrice;
 
     @Builder.Default
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
