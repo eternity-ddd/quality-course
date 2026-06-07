@@ -98,7 +98,7 @@ class CartServiceTest {
                 .build();
 
         CartLineItem line = Fixtures.aCartLineItem()
-                .unitPrice(22_000L)
+                .basePrice(10_000L)
                 .groups(new ArrayList<>(List.of(cog)))
                 .build();
 
@@ -467,7 +467,7 @@ class CartServiceTest {
             verify(cartRepository).save(captor.capture());
             CartLineItem line = captor.getValue().getItems().get(0);
             assertThat(line.getGroups().get(0).getOptions().get(0).getPrice()).isEqualTo(0L);
-            assertThat(line.getUnitPrice()).isEqualTo(10_000L);
+            assertThat(line.getBasePrice()).isEqualTo(10_000L);
         }
 
         @Test
@@ -488,12 +488,12 @@ class CartServiceTest {
             verify(cartRepository).save(captor.capture());
             CartLineItem line = captor.getValue().getItems().get(0);
             assertThat(line.getGroups()).isEmpty();
-            assertThat(line.getUnitPrice()).isEqualTo(10_000L);
+            assertThat(line.getBasePrice()).isEqualTo(10_000L);
         }
 
         @Test
-        @DisplayName("정상 흐름 — line 생성 + unitPrice = basePrice + 옵션 가격 합산")
-        void happyPath_buildsLineWithCorrectUnitPrice() {
+        @DisplayName("정상 흐름 — line 생성 + basePrice = 메뉴 기본가격")
+        void happyPath_buildsLineWithCorrectBasePrice() {
             given(cartRepository.findByUserId(Fixtures.USER_ID)).willReturn(Optional.of(emptyCart));
             given(cartRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
             given(menuRepository.findById(menu.getId())).willReturn(Optional.of(menu));
@@ -515,7 +515,7 @@ class CartServiceTest {
             CartLineItem line = saved.getItems().get(0);
             assertThat(line.getMenuId()).isEqualTo(menu.getId());
             assertThat(line.getMenuCount()).isEqualTo(2);
-            assertThat(line.getUnitPrice()).isEqualTo(22_000L);
+            assertThat(line.getBasePrice()).isEqualTo(10_000L);
             assertThat(line.getGroups()).hasSize(1);
             assertThat(line.getGroups().get(0).getOptions()).hasSize(1);
         }
@@ -1004,14 +1004,14 @@ class CartServiceTest {
         }
 
         @Test
-        @DisplayName("line.unitPrice가 null이면 ISE")
-        void unitPriceNull_throws() {
+        @DisplayName("line.basePrice가 null이면 ISE")
+        void basePriceNull_throws() {
             CartOption co = Fixtures.aCartOption().build();
             CartOptionGroup cog = Fixtures.aCartOptionGroup()
                     .options(new ArrayList<>(List.of(co)))
                     .build();
             CartLineItem nullPriceLine = Fixtures.aCartLineItem()
-                    .unitPrice(null)
+                    .basePrice(null)
                     .groups(new ArrayList<>(List.of(cog)))
                     .build();
             Cart bad = Fixtures.aCart()
@@ -1031,14 +1031,14 @@ class CartServiceTest {
         }
 
         @Test
-        @DisplayName("line.unitPrice가 재계산된 unit과 다르면 ISE")
-        void unitPriceMismatch_throws() {
+        @DisplayName("line.basePrice가 메뉴 basePrice와 다르면 ISE")
+        void basePriceMismatch_throws() {
             CartOption co = Fixtures.aCartOption().build();
             CartOptionGroup cog = Fixtures.aCartOptionGroup()
                     .options(new ArrayList<>(List.of(co)))
                     .build();
             CartLineItem wrong = Fixtures.aCartLineItem()
-                    .unitPrice(11_111L)
+                    .basePrice(11_111L)
                     .groups(new ArrayList<>(List.of(cog)))
                     .build();
             Cart bad = Fixtures.aCart()
@@ -1134,7 +1134,7 @@ class CartServiceTest {
         }
 
         @Test
-        @DisplayName("단일 라인 — unitPrice × count")
+        @DisplayName("단일 라인 — (basePrice + 옵션) × count")
         void singleLine_sumsCorrectly() {
             given(cartRepository.findByUserId(Fixtures.USER_ID)).willReturn(Optional.of(cartWithItem));
 
@@ -1142,10 +1142,10 @@ class CartServiceTest {
         }
 
         @Test
-        @DisplayName("다중 라인 — 라인별 unitPrice × count 합산")
+        @DisplayName("다중 라인 — 라인별 (basePrice + 옵션) × count 합산")
         void multipleLines_sumsCorrectly() {
             CartLineItem line2 = Fixtures.aCartLineItem().id(2L).menuId(2L).menuName("목살 세트")
-                    .unitPrice(23_000L).menuCount(2).build();
+                    .basePrice(23_000L).menuCount(2).build();
 
             Cart multiCart = Fixtures.aCart()
                     .shopId(Fixtures.SHOP_ID)
@@ -1203,14 +1203,14 @@ class CartServiceTest {
             assertThat(res.items()).hasSize(1);
             CartDto.Item item = res.items().get(0);
             assertThat(item.status()).isEqualTo(CartDto.ItemStatus.VALID);
-            assertThat(item.unitPrice()).isEqualTo(22_000L);
+            assertThat(item.basePrice()).isEqualTo(22_000L);
             assertThat(res.totalPrice()).isEqualTo(22_000L);
             assertThat(res.shop()).isNotNull();
             assertThat(res.shop().open()).isTrue();
         }
 
         @Test
-        @DisplayName("다중 라인 — totalPrice는 라인별 (unitPrice × count) 합산")
+        @DisplayName("다중 라인 — totalPrice는 라인별 (basePrice + 옵션) × count 합산")
         void multipleLines_totalPrice_sumsCorrectly() {
             Option opt2 = Fixtures.anOption().id(2L).optionGroupId(2L).name("대(500g)").price(8_000L).build();
             OptionGroup og2 = Fixtures.anOptionGroup().id(2L).name("추가").required(false)
@@ -1225,7 +1225,7 @@ class CartServiceTest {
             CartOptionGroup cog2 = Fixtures.aCartOptionGroup().id(2L).optionGroupId(2L).name("추가")
                     .options(new ArrayList<>(List.of(co2))).build();
             CartLineItem line2 = Fixtures.aCartLineItem().id(2L).menuId(2L).menuName("목살 세트")
-                    .unitPrice(23_000L).menuCount(2)
+                    .basePrice(15_000L).menuCount(2)
                     .groups(new ArrayList<>(List.of(cog2))).build();
 
             Cart multiCart = Fixtures.aCart()

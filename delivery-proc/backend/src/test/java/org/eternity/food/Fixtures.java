@@ -84,7 +84,7 @@ public class Fixtures {
                 .menuId(MENU_ID)
                 .menuName("삼겹살 1인세트")
                 .menuCount(1)
-                .unitPrice(10_000L);
+                .basePrice(10_000L);
     }
 
     public static CartOptionGroup.CartOptionGroupBuilder aCartOptionGroup() {
