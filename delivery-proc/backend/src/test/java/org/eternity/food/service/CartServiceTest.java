@@ -116,7 +116,7 @@ class CartServiceTest {
         Shop shop = Shop.builder().id(1L).name("오겹돼지").minOrderPrice(13_000L).build();
 
         CartLineItem existingLine = CartLineItem.builder().id(1L).menuId(1L).menuName("삼겹살 1인세트")
-                .menuCount(1).basePrice(22_000L)
+                .menuCount(1).basePrice(10_000L)
                 .groups(new ArrayList<>(List.of(
                         CartOptionGroup.builder().id(1L).optionGroupId(1L).name("기본")
                                 .options(new ArrayList<>(List.of(
