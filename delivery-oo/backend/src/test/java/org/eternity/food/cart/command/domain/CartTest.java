@@ -2,53 +2,50 @@ package org.eternity.food.cart.command.domain;
 
 import org.eternity.food.base.generic.money.Money;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.eternity.food.Fixtures.aCart;
-import static org.eternity.food.Fixtures.aCartLineItem;
-import static org.eternity.food.Fixtures.aCartOption;
-import static org.eternity.food.Fixtures.aCartOptionGroup;
 
 class CartTest {
 
     @Test
     @DisplayName("getTotalPrice: 라인별 subtotal 합")
     void totalPrice_sumOfLines() {
-        Cart cart = aCart().build();
+        CartLineItem line1 = CartLineItem.builder()
+                .menuId(1L).menuName("삼겹살").count(1).unitPrice(Money.wons(10_000))
+                .groups(List.of()).build();
+        CartLineItem line2 = CartLineItem.builder()
+                .menuId(2L).menuName("목살").count(2).unitPrice(Money.wons(15_000))
+                .groups(List.of()).build();
+        Cart cart = Cart.builder().userId(1L).shopId(1L).items(List.of(line1, line2)).build();
 
-        Money expected = cart.getItems().stream()
-                .map(CartLineItem::subtotal)
-                .reduce(Money.ZERO, Money::plus);
-
-        assertThat(cart.getTotalPrice()).isEqualTo(expected);
+        // 10,000×1 + 15,000×2 = 40,000
+        assertThat(cart.getTotalPrice()).isEqualTo(Money.wons(40_000));
     }
 
     @Test
     @DisplayName("addItem: 다른 shopId 진입 → 기존 items.clear() + 새 shopId로 전환")
     void addItem_differentShop_clearsAndSwitches() {
-        Cart cart = aCart().build();
-        Long oldShopId = cart.getShopId();
-        CartLineItem newLine = aCartLineItem()
-                .id(99L)
-                .menuId(999L)
-                .menuName("초밥")
-                .groups(List.of(aCartOptionGroup()
-                        .id(99L)
-                        .optionGroupId(999L)
-                        .options(java.util.Set.of(aCartOption().name("특수옵션").build()))
+        CartLineItem oldLine = CartLineItem.builder()
+                .menuId(1L).menuName("삼겹살").count(1).unitPrice(Money.wons(10_000))
+                .groups(List.of()).build();
+        Cart cart = Cart.builder().userId(1L).shopId(1L).items(List.of(oldLine)).build();
+
+        CartLineItem newLine = CartLineItem.builder()
+                .menuId(999L).menuName("초밥").count(1).unitPrice(Money.wons(20_000))
+                .groups(List.of(CartOptionGroup.builder()
+                        .optionGroupId(999L).name("와사비")
+                        .options(Set.of(CartOption.builder().name("추가").price(Money.wons(500)).build()))
                         .build()))
                 .build();
-        Long newShopId = oldShopId + 100;
 
-        cart.addItem(newShopId, newLine);
+        cart.addItem(200L, newLine);
 
-        assertThat(cart.getShopId()).isEqualTo(newShopId);
-        assertThat(cart.getItems()).containsExactly(newLine);
+        assertThat(cart.getShopId()).isEqualTo(200L);
+        assertThat(cart.getItems()).hasSize(1);
+        assertThat(cart.getItems().get(0).getMenuId()).isEqualTo(999L);
     }
 }
