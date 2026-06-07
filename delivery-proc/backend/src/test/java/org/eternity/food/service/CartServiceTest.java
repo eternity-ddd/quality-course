@@ -1134,33 +1134,18 @@ class CartServiceTest {
         }
 
         @Test
-        @DisplayName("단일 라인 — basePrice + 옵션 가격 합산")
+        @DisplayName("단일 라인 — unitPrice × count")
         void singleLine_sumsCorrectly() {
             given(cartRepository.findByUserId(Fixtures.USER_ID)).willReturn(Optional.of(cartWithItem));
-            given(menuRepository.findAllById(any())).willReturn(List.of(menu));
-            given(optionGroupRepository.findAllById(any())).willReturn(List.of(optionGroup));
 
             assertThat(cartService.getTotalPrice(Fixtures.USER_ID)).isEqualTo(22_000L);
         }
 
         @Test
-        @DisplayName("다중 라인 — 라인별 (basePrice + 옵션) × count 합산")
+        @DisplayName("다중 라인 — 라인별 unitPrice × count 합산")
         void multipleLines_sumsCorrectly() {
-            Option opt2 = Fixtures.anOption().id(2L).optionGroupId(2L).name("대(500g)").price(8_000L).build();
-            OptionGroup og2 = Fixtures.anOptionGroup().id(2L).name("추가").required(false)
-                    .options(new ArrayList<>(List.of(opt2))).build();
-
-            Menu menu2 = Fixtures.aMenu().id(2L).name("목살 세트").basePrice(15_000L)
-                    .optionGroups(new ArrayList<>(List.of(
-                            Fixtures.aMenuOptionGroup().optionGroupId(2L).displayOrder(1).build())))
-                    .build();
-
-            CartOption co2 = Fixtures.aCartOption().id(2L).optionId(2L).name("대(500g)").price(8_000L).build();
-            CartOptionGroup cog2 = Fixtures.aCartOptionGroup().id(2L).optionGroupId(2L).name("추가")
-                    .options(new ArrayList<>(List.of(co2))).build();
             CartLineItem line2 = Fixtures.aCartLineItem().id(2L).menuId(2L).menuName("목살 세트")
-                    .unitPrice(23_000L).menuCount(2)
-                    .groups(new ArrayList<>(List.of(cog2))).build();
+                    .unitPrice(23_000L).menuCount(2).build();
 
             Cart multiCart = Fixtures.aCart()
                     .shopId(Fixtures.SHOP_ID)
@@ -1168,20 +1153,8 @@ class CartServiceTest {
                     .build();
 
             given(cartRepository.findByUserId(Fixtures.USER_ID)).willReturn(Optional.of(multiCart));
-            given(menuRepository.findAllById(any())).willReturn(List.of(menu, menu2));
-            given(optionGroupRepository.findAllById(any())).willReturn(List.of(optionGroup, og2));
 
             assertThat(cartService.getTotalPrice(Fixtures.USER_ID)).isEqualTo(68_000L);
-        }
-
-        @Test
-        @DisplayName("메뉴가 카탈로그에서 사라졌으면 저장된 unitPrice 기준으로 합산")
-        void menuRemoved_usesStoredUnitPrice() {
-            given(cartRepository.findByUserId(Fixtures.USER_ID)).willReturn(Optional.of(cartWithItem));
-            given(menuRepository.findAllById(any())).willReturn(List.of());
-            given(optionGroupRepository.findAllById(any())).willReturn(List.of());
-
-            assertThat(cartService.getTotalPrice(Fixtures.USER_ID)).isEqualTo(22_000L);
         }
     }
 

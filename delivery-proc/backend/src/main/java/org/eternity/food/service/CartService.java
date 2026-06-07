@@ -282,76 +282,11 @@ public class CartService {
             return 0L;
         }
 
-        Map<Long, Menu> menus = loadMenus(cart);
-        Map<Long, OptionGroup> ogs = loadOptionGroups(menus);
-
         long total = 0L;
         for (CartLineItem line : cart.getItems()) {
-            total += calculateUnitPrice(line, menus, ogs) * line.getMenuCount();
+            total += line.getUnitPrice() * line.getMenuCount();
         }
         return total;
-    }
-
-    private long calculateUnitPrice(CartLineItem line,
-                                    Map<Long, Menu> menus,
-                                    Map<Long, OptionGroup> ogs) {
-        Menu menu = menus.get(line.getMenuId());
-        if (menu == null) {
-            return line.getUnitPrice();
-        }
-
-        long unit = menu.getBasePrice();
-        for (CartOptionGroup cg : line.getGroups()) {
-            unit += calculateOptionPrice(cg, ogs);
-        }
-        return unit;
-    }
-
-    private long calculateOptionPrice(CartOptionGroup cg, Map<Long, OptionGroup> ogs) {
-        OptionGroup og = ogs.get(cg.getOptionGroupId());
-        if (og == null) {
-            return 0L;
-        }
-        Map<Long, Option> optById = new HashMap<>();
-        for (Option o : og.getOptions()) {
-            optById.put(o.getId(), o);
-        }
-        long sum = 0L;
-        for (CartOption co : cg.getOptions()) {
-            Option current = optById.get(co.getOptionId());
-            if (current != null) {
-                sum += current.getPrice();
-            }
-        }
-        return sum;
-    }
-
-    private Map<Long, Menu> loadMenus(Cart cart) {
-        Set<Long> menuIds = new HashSet<>();
-        for (CartLineItem item : cart.getItems()) {
-            menuIds.add(item.getMenuId());
-        }
-        Map<Long, Menu> result = new HashMap<>();
-        for (Menu m : menuRepository.findAllById(menuIds)) {
-            result.put(m.getId(), m);
-        }
-        return result;
-    }
-
-    private Map<Long, OptionGroup> loadOptionGroups(Map<Long, Menu> menus) {
-        Set<Long> ogIds = new HashSet<>();
-        for (Menu m : menus.values()) {
-            for (MenuOptionGroup mog : m.getOptionGroups()) {
-                ogIds.add(mog.getOptionGroupId());
-            }
-        }
-        Map<Long, OptionGroup> result = new HashMap<>();
-        if (!ogIds.isEmpty()) {
-            for (OptionGroup og : optionGroupRepository.findAllById(ogIds)) {
-                result.put(og.getId(), og);
-            }
-        }
-        return result;
     }
 
     // ====================================================================
