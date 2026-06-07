@@ -15,10 +15,10 @@ class CartTest {
     @DisplayName("getTotalPrice: 라인별 subtotal 합")
     void totalPrice_sumOfLines() {
         CartLineItem line1 = CartLineItem.builder()
-                .menuId(1L).menuName("삼겹살").count(1).unitPrice(Money.wons(10_000))
+                .menuId(1L).menuName("삼겹살").count(1).basePrice(Money.wons(10_000))
                 .groups(List.of()).build();
         CartLineItem line2 = CartLineItem.builder()
-                .menuId(2L).menuName("목살").count(2).unitPrice(Money.wons(15_000))
+                .menuId(2L).menuName("목살").count(2).basePrice(Money.wons(15_000))
                 .groups(List.of()).build();
         Cart cart = Cart.builder().userId(1L).shopId(1L).items(List.of(line1, line2)).build();
 
@@ -30,12 +30,12 @@ class CartTest {
     @DisplayName("addItem: 다른 shopId 진입 → 기존 items.clear() + 새 shopId로 전환")
     void addItem_differentShop_clearsAndSwitches() {
         CartLineItem oldLine = CartLineItem.builder()
-                .menuId(1L).menuName("삼겹살").count(1).unitPrice(Money.wons(10_000))
+                .menuId(1L).menuName("삼겹살").count(1).basePrice(Money.wons(10_000))
                 .groups(List.of()).build();
         Cart cart = Cart.builder().userId(1L).shopId(1L).items(List.of(oldLine)).build();
 
         CartLineItem newLine = CartLineItem.builder()
-                .menuId(999L).menuName("초밥").count(1).unitPrice(Money.wons(20_000))
+                .menuId(999L).menuName("초밥").count(1).basePrice(Money.wons(20_000))
                 .groups(List.of(CartOptionGroup.builder()
                         .optionGroupId(999L).name("와사비")
                         .options(Set.of(CartOption.builder().name("추가").price(Money.wons(500)).build()))

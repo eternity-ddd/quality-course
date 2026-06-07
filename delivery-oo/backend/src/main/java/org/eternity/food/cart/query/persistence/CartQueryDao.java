@@ -44,7 +44,7 @@ public class CartQueryDao {
         CartHeader header = headers.get(0);
 
         String itemSql = """
-                SELECT cli.id AS cli_id, cli.menu_id, cli.menu_name, cli.menu_count, cli.unit_price,
+                SELECT cli.id AS cli_id, cli.menu_id, cli.menu_name, cli.menu_count, cli.base_price,
                        cog.id AS cog_id, cog.option_group_id AS cog_option_group_id, cog.name AS cog_name,
                        co.name AS co_name, co.price AS co_price
                 FROM cart_line_item cli
@@ -65,7 +65,7 @@ public class CartQueryDao {
                         rs.getLong("menu_id"),
                         rs.getString("menu_name"),
                         rs.getInt("menu_count"),
-                        rs.getLong("unit_price"),
+                        rs.getLong("base_price"),
                         new LinkedHashMap<>()
                 );
                 itemsById.put(itemId, acc);
@@ -101,7 +101,7 @@ public class CartQueryDao {
                         a.menuId,
                         a.menuName,
                         a.quantity,
-                        a.unitPrice,
+                        a.basePrice,
                         a.groupsById.values().stream()
                                 .map(g -> new CartOptionGroupRaw(g.optionGroupId, g.name, g.options))
                                 .toList()
@@ -203,15 +203,15 @@ public class CartQueryDao {
         final Long menuId;
         final String menuName;
         final int quantity;
-        final long unitPrice;
+        final long basePrice;
         final Map<Long, GroupAccumulator> groupsById;
 
-        ItemAccumulator(Long id, Long menuId, String menuName, int quantity, long unitPrice, Map<Long, GroupAccumulator> groupsById) {
+        ItemAccumulator(Long id, Long menuId, String menuName, int quantity, long basePrice, Map<Long, GroupAccumulator> groupsById) {
             this.id = id;
             this.menuId = menuId;
             this.menuName = menuName;
             this.quantity = quantity;
-            this.unitPrice = unitPrice;
+            this.basePrice = basePrice;
             this.groupsById = groupsById;
         }
     }

@@ -19,7 +19,7 @@ public record CartRaw(
             Long menuId,
             String menuName,
             int quantity,
-            long unitPrice,
+            long basePrice,
             List<CartOptionGroupRaw> groups
     ) {
     }

@@ -28,13 +28,7 @@ public final class CartLineItemMapper {
                 .map(CartLineItemMapper::toCartOptionGroup)
                 .toList();
 
-        Money optionsTotal = groups.stream()
-                .map(CartOptionGroup::getTotalPrice)
-                .reduce(Money.ZERO, Money::plus);
-
-        Money unitPrice = menu.getBasePrice().plus(optionsTotal);
-
-        return new CartLineItem(menu.getId(), menu.getName(), command.count(), unitPrice, groups);
+        return new CartLineItem(menu.getId(), menu.getName(), command.count(), menu.getBasePrice(), groups);
     }
 
     private static CartOptionGroup toCartOptionGroup(CartOptionGroupCommand g) {

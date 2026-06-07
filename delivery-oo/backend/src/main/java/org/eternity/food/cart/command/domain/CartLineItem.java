@@ -37,19 +37,19 @@ public class CartLineItem extends DomainEntity<CartLineItem, Long> {
     @Column(name = "MENU_COUNT")
     private int menuCount;
 
-    @Column(name = "UNIT_PRICE")
-    private Money unitPrice;
+    @Column(name = "BASE_PRICE")
+    private Money basePrice;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "CART_LINE_ITEM_ID")
     private Set<CartOptionGroup> groups = new HashSet<>();
 
-    public CartLineItem(Long menuId, String menuName, int count, Money unitPrice, List<CartOptionGroup> groups) {
-        this(null, menuId, menuName, count, unitPrice, groups);
+    public CartLineItem(Long menuId, String menuName, int count, Money basePrice, List<CartOptionGroup> groups) {
+        this(null, menuId, menuName, count, basePrice, groups);
     }
 
     @Builder
-    public CartLineItem(Long id, Long menuId, String menuName, int count, Money unitPrice, List<CartOptionGroup> groups) {
+    public CartLineItem(Long id, Long menuId, String menuName, int count, Money basePrice, List<CartOptionGroup> groups) {
         if (count < 1) {
             throw new IllegalArgumentException("수량은 1 이상이어야 합니다: " + count);
         }
@@ -58,7 +58,7 @@ public class CartLineItem extends DomainEntity<CartLineItem, Long> {
         this.menuId = menuId;
         this.menuName = menuName;
         this.menuCount = count;
-        this.unitPrice = unitPrice;
+        this.basePrice = basePrice;
         if (groups != null) {
             this.groups.addAll(groups);
         }
@@ -98,6 +98,9 @@ public class CartLineItem extends DomainEntity<CartLineItem, Long> {
     }
 
     public Money subtotal() {
-        return unitPrice.times(menuCount);
+        Money optionTotal = groups.stream()
+                .map(CartOptionGroup::getTotalPrice)
+                .reduce(Money.ZERO, Money::plus);
+        return basePrice.plus(optionTotal).times(menuCount);
     }
 }

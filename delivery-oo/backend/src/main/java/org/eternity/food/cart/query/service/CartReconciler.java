@@ -29,7 +29,7 @@ public class CartReconciler {
                 .toList();
 
         long totalPrice = items.stream()
-                .mapToLong(it -> it.unitPrice() * it.quantity())
+                .mapToLong(it -> it.basePrice() * it.quantity())
                 .sum();
 
         return new Cart(raw.id(), null, shop, items, totalPrice);
@@ -98,7 +98,8 @@ public class CartReconciler {
             }
         }
 
-        boolean priceChanged = anyPriceChanged || unitTotal != item.unitPrice();
+        boolean basePriceChanged = menu.basePrice() != item.basePrice();
+        boolean priceChanged = anyPriceChanged || basePriceChanged;
 
         ItemStatus status;
 
@@ -137,7 +138,7 @@ public class CartReconciler {
                 item.id(),
                 item.menuId(),
                 item.menuName(),
-                item.unitPrice(),
+                item.basePrice(),
                 item.quantity(),
                 options,
                 ItemStatus.MENU_REMOVED,
