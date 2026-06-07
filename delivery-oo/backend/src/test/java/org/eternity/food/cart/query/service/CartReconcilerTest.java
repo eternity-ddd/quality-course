@@ -56,8 +56,8 @@ class CartReconcilerTest {
         return new CartRaw(1L, 1L, 1L, List.of(items));
     }
 
-    private CartItemRaw itemRaw(int qty, long unitPrice, CartOptionGroupRaw... groups) {
-        return new CartItemRaw(ITEM_ID, MENU_ID, "삼겹살 1인세트", qty, unitPrice, List.of(groups));
+    private CartItemRaw itemRaw(int qty, long basePrice, CartOptionGroupRaw... groups) {
+        return new CartItemRaw(ITEM_ID, MENU_ID, "삼겹살 1인세트", qty, basePrice, List.of(groups));
     }
 
     private CartOptionGroupRaw groupRaw(String name, CartOptionRaw... opts) {
@@ -102,7 +102,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("메뉴/그룹/옵션 모두 일치 → 라인 status=VALID + 옵션 status=VALID + 메시지 없음")
         void allMatch_valid() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -114,15 +114,15 @@ class CartReconcilerTest {
             Item item = result.items().get(0);
             assertThat(item.status()).isEqualTo(ItemStatus.VALID);
             assertThat(item.messages()).isEmpty();
-            assertThat(item.unitPrice()).isEqualTo(22_000L);
+            assertThat(item.basePrice()).isEqualTo(22_000L);
             assertThat(item.selectedOptions()).hasSize(1);
             assertThat(item.selectedOptions().get(0).status()).isEqualTo(OptionStatus.VALID);
         }
 
         @Test
-        @DisplayName("totalPrice = unitPrice × quantity 합산")
+        @DisplayName("totalPrice = basePrice × quantity 합산")
         void totalPrice_sums() {
-            CartRaw raw = cartRaw(itemRaw(3, 22_000,
+            CartRaw raw = cartRaw(itemRaw(3, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -143,7 +143,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("옵션 이름 변경 → 기존 이름으로 찾을 수 없으므로 INVALID_OPTION")
         void optionNameChanged_invalid() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -159,7 +159,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("Identity 유지 — line item의 menuId는 snapshot 기준 그대로")
         void identity_preserved() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -182,7 +182,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("메뉴 이름 변경 → messages에 안내 + display는 최신 이름 + status VALID")
         void menuNameChanged_messageOnly() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("프리미엄 삼겹살", "OPEN", 10_000),
@@ -199,7 +199,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("그룹 이름 변경 → messages에 안내 + display는 최신 이름 + status VALID")
         void groupNameChanged_messageOnly() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -223,7 +223,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("옵션 가격 변경 → 옵션 status=PRICE_CHANGED + 라인 status=PRICE_CHANGED + 메시지")
         void optionPrice_changed() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -241,11 +241,11 @@ class CartReconcilerTest {
         }
 
         @Test
-        @DisplayName("메뉴 basePrice 변경(snapshot unitPrice와 합산 결과가 다름) → 라인 status=PRICE_CHANGED")
+        @DisplayName("메뉴 basePrice 변경(snapshot basePrice와 합산 결과가 다름) → 라인 status=PRICE_CHANGED")
         void menuBasePrice_changed() {
-            // cart snapshot unitPrice=22_000 (= base 10_000 + opt 12_000)
+            // cart snapshot basePrice=22_000 (= base 10_000 + opt 12_000)
             // catalog basePrice=15_000 → unitTotal=27_000 → diff
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 15_000),
@@ -255,7 +255,7 @@ class CartReconcilerTest {
 
             Item item = result.items().get(0);
             assertThat(item.status()).isEqualTo(ItemStatus.PRICE_CHANGED);
-            assertThat(item.unitPrice()).isEqualTo(27_000L);
+            assertThat(item.basePrice()).isEqualTo(27_000L);
         }
     }
 
@@ -268,7 +268,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("옵션이 catalog에서 사라짐 → 옵션 status=INVALID + 라인 status=INVALID_OPTION")
         void optionRemoved() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             // 그룹은 존재하지만 cart의 옵션 이름과 다른 옵션만 보유
             OptionInfo otherOpt = new OptionInfo("라지", 18_000);
@@ -287,7 +287,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("그룹이 catalog에서 사라짐 → 모든 옵션 INVALID + 라인 INVALID_OPTION")
         void groupRemoved() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -304,7 +304,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("그룹이 메뉴의 optionGroupIds에 더 이상 포함되지 않음 → INVALID_OPTION")
         void groupNotInMenuConfig() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
 
             // 메뉴는 다른 OPTION_GROUP_ID(=200L)만 참조
@@ -330,7 +330,7 @@ class CartReconcilerTest {
         @DisplayName("메뉴 status != OPEN → 라인 MENU_NOT_OPEN + 메시지 (옵션이 유효해도)")
         void menuClosed_overridesPrice() {
             // 옵션 가격까지 변경되어 있어도 MENU_NOT_OPEN이 우선순위
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "READY", 10_000),
@@ -353,7 +353,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("catalog menusById에 menuId 없음 → 라인 MENU_REMOVED + 모든 옵션 INVALID")
         void menuMissingFromCatalog() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = new CatalogSnapshot(Map.of(), Map.of());
 
@@ -367,9 +367,9 @@ class CartReconcilerTest {
         }
 
         @Test
-        @DisplayName("MENU_REMOVED 라인은 snapshot의 menuName/unitPrice 그대로 표시")
+        @DisplayName("MENU_REMOVED 라인은 snapshot의 menuName/basePrice 그대로 표시")
         void menuRemoved_preservesSnapshot() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = new CatalogSnapshot(Map.of(), Map.of());
 
@@ -377,7 +377,7 @@ class CartReconcilerTest {
 
             Item item = result.items().get(0);
             assertThat(item.menuName()).isEqualTo("삼겹살 1인세트");
-            assertThat(item.unitPrice()).isEqualTo(22_000L);
+            assertThat(item.basePrice()).isEqualTo(10_000L);
         }
     }
 
@@ -390,7 +390,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("reconcile 결과는 인자로 들어온 shop 정보를 그대로 carry")
         void shop_isCarriedAsIs() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),
@@ -406,7 +406,7 @@ class CartReconcilerTest {
         @Test
         @DisplayName("shop=null도 그대로 들어감 (orphan cart)")
         void shop_nullCarried() {
-            CartRaw raw = cartRaw(itemRaw(1, 22_000,
+            CartRaw raw = cartRaw(itemRaw(1, 10_000,
                     groupRaw("기본", optionRaw("소(250g)", 12_000))));
             CatalogSnapshot cat = snapshot(
                     menu("삼겹살 1인세트", "OPEN", 10_000),

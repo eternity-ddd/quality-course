@@ -81,7 +81,7 @@ class PlaceOrderServiceTest {
         shop = mock(Shop.class);
         lenient().when(shop.getId()).thenReturn(Fixtures.SHOP_ID);
         lenient().when(shop.isOpen()).thenReturn(true);
-        // fixture cart는 unitPrice 10,000 × count 1 = 10,000원 / shop minOrderPrice 13,000원
+        // fixture cart는 basePrice 10,000 × count 1 = 10,000원 / shop minOrderPrice 13,000원
         // → 통과시키려면 충분한 값으로 stub해야 한다. 기본 5,000원 으로 deault.
         lenient().when(shop.getMinOrderPrice()).thenReturn(Money.wons(5_000));
 
@@ -362,7 +362,7 @@ class PlaceOrderServiceTest {
                     .menuId(Fixtures.MENU_ID)
                     .menuName("삼겹살 1인세트")
                     .count(2)
-                    .unitPrice(Money.wons(15_000))
+                    .basePrice(Money.wons(15_000))
                     .groups(List.of(grp))
                     .build();
             Cart multi = Fixtures.aCart()

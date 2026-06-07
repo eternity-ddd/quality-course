@@ -32,23 +32,23 @@ class CartLineItemMapperTest {
     }
 
     @Nested
-    @DisplayName("unitPrice 계산")
+    @DisplayName("basePrice 계산")
     class UnitPriceCalculation {
 
         @Test
-        @DisplayName("unitPrice = menu.basePrice + 모든 옵션 가격 합")
-        void unitPriceIsBasePricePlusOptionsTotal() {
+        @DisplayName("basePrice = menu.basePrice (옵션 미포함)")
+        void basePriceIsMenuBasePrice() {
             Menu menu = Fixtures.aMenu().basePrice(Money.wons(10_000)).build();
             CartLineItemCommand command = commandWithOptions(1, 12_000L);
 
             CartLineItem item = CartLineItemMapper.map(menu, command);
 
-            assertThat(item.getUnitPrice()).isEqualTo(Money.wons(22_000));
+            assertThat(item.getBasePrice()).isEqualTo(Money.wons(10_000));
         }
 
         @Test
-        @DisplayName("옵션 그룹이 비어 있으면 unitPrice = basePrice")
-        void unitPriceEqualsBasePriceWhenNoOptions() {
+        @DisplayName("옵션 그룹이 비어 있으면 basePrice = basePrice")
+        void basePriceEqualsBasePriceWhenNoOptions() {
             Menu menu = Fixtures.aMenu().basePrice(Money.wons(8_500)).build();
             CartLineItemCommand command = new CartLineItemCommand(
                     Fixtures.MENU_ID, "기본메뉴", 2, List.of()
@@ -56,13 +56,13 @@ class CartLineItemMapperTest {
 
             CartLineItem item = CartLineItemMapper.map(menu, command);
 
-            assertThat(item.getUnitPrice()).isEqualTo(Money.wons(8_500));
+            assertThat(item.getBasePrice()).isEqualTo(Money.wons(8_500));
             assertThat(item.getGroups()).isEmpty();
         }
 
         @Test
-        @DisplayName("옵션이 여러 개면 가격이 모두 합산된다")
-        void multipleOptionsAreSummed() {
+        @DisplayName("옵션이 여러 개여도 basePrice는 menu.basePrice만")
+        void multipleOptions_basePriceUnchanged() {
             Menu menu = Fixtures.aMenu().basePrice(Money.wons(5_000)).build();
             CartLineItemCommand command = new CartLineItemCommand(
                     Fixtures.MENU_ID, "메뉴", 1,
@@ -79,8 +79,7 @@ class CartLineItemMapperTest {
 
             CartLineItem item = CartLineItemMapper.map(menu, command);
 
-            // basePrice 5_000 + 옵션 합 6_000
-            assertThat(item.getUnitPrice()).isEqualTo(Money.wons(11_000));
+            assertThat(item.getBasePrice()).isEqualTo(Money.wons(5_000));
         }
     }
 
@@ -138,7 +137,7 @@ class CartLineItemMapperTest {
     class SubtotalIntegration {
 
         @Test
-        @DisplayName("매핑된 결과의 subtotal = unitPrice × count")
+        @DisplayName("매핑된 결과의 subtotal = basePrice × count")
         void mappedSubtotal() {
             Menu menu = Fixtures.aMenu().basePrice(Money.wons(10_000)).build();
             CartLineItemCommand command = commandWithOptions(3, 2_000L);

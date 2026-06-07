@@ -208,7 +208,7 @@ class OrderableCartInvariantTest {
             Cart cart = aCart()
                     .items(List.of(aCartLineItem()
                             .menuId(999L)
-                            .unitPrice(Money.wons(15_000))
+                            .basePrice(Money.wons(15_000))
                             .build()))
                     .build();
 
@@ -235,7 +235,7 @@ class OrderableCartInvariantTest {
         void optionGroupNotFound_fails() {
             Cart cart = aCart()
                     .items(List.of(aCartLineItem()
-                            .unitPrice(Money.wons(15_000))
+                            .basePrice(Money.wons(15_000))
                             .groups(List.of(aCartOptionGroup().optionGroupId(999L).build()))
                             .build()))
                     .build();
@@ -257,7 +257,7 @@ class OrderableCartInvariantTest {
                     .build();
             Cart cart = aCart()
                     .items(List.of(aCartLineItem()
-                            .unitPrice(Money.wons(15_000))
+                            .basePrice(Money.wons(15_000))
                             .groups(List.of(aCartOptionGroup().optionGroupId(777L).build()))
                             .build()))
                     .build();
@@ -272,7 +272,7 @@ class OrderableCartInvariantTest {
         void optionNameNotFound_fails() {
             Cart cart = aCart()
                     .items(List.of(aCartLineItem()
-                            .unitPrice(Money.wons(15_000))
+                            .basePrice(Money.wons(15_000))
                             .groups(List.of(aCartOptionGroup()
                                     .options(Set.of(aCartOption().name("존재하지않는옵션").build()))
                                     .build()))
@@ -290,7 +290,7 @@ class OrderableCartInvariantTest {
         void optionPriceMismatch_fails() {
             Cart cart = aCart()
                     .items(List.of(aCartLineItem()
-                            .unitPrice(Money.wons(15_000))
+                            .basePrice(Money.wons(15_000))
                             .groups(List.of(aCartOptionGroup()
                                     .options(Set.of(aCartOption()
                                             .price(Money.wons(99999))
@@ -346,7 +346,7 @@ class OrderableCartInvariantTest {
         return aCart()
                 .items(List.of(aCartLineItem()
                         .menuId(1L)
-                        .unitPrice(Money.wons(15_000))
+                        .basePrice(Money.wons(15_000))
                         .count(1)
                         .groups(List.of(aCartOptionGroup()
                                 .optionGroupId(1L)

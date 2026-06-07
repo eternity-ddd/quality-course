@@ -210,14 +210,16 @@ class CartLineItemTest {
     class Subtotal {
 
         @Test
-        @DisplayName("unitPrice * count")
-        void subtotal_unitPriceTimesCount() {
+        @DisplayName("(basePrice + 옵션) × count")
+        void subtotal_basePricePlusOptionsTimesCount() {
+            // aCartLineItem 기본: basePrice=10,000 + aCartOption 가격=12,000
             CartLineItem line = aCartLineItem()
-                    .unitPrice(Money.wons(10_000))
+                    .basePrice(Money.wons(10_000))
                     .count(3)
                     .build();
 
-            assertThat(line.subtotal()).isEqualTo(Money.wons(30_000));
+            // (10,000 + 12,000) × 3 = 66,000
+            assertThat(line.subtotal()).isEqualTo(Money.wons(66_000));
         }
     }
 }
