@@ -3,8 +3,6 @@ package org.eternity.food.service;
 import org.eternity.food.dto.CartDto.AddItemRequest;
 import org.eternity.food.entity.Cart;
 import org.eternity.food.entity.CartLineItem;
-import org.eternity.food.entity.CartOption;
-import org.eternity.food.entity.CartOptionGroup;
 import org.eternity.food.entity.Menu;
 import org.eternity.food.entity.MenuOptionGroup;
 import org.eternity.food.entity.Option;
@@ -23,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -57,32 +54,16 @@ class CartServiceTest {
     private CartService cartService;
 
     @Test
-    @DisplayName("다중 라인 — 라인별 (basePrice + 옵션) × count 합산")
+    @DisplayName("다중 라인 — 라인별 unitPrice × count 합산")
     void multipleLines_sumsCorrectly() {
-        // 메뉴1: basePrice 10,000 + 옵션 12,000 = 22,000 × 1
-        Menu menu1 = Menu.builder().id(1L).basePrice(10_000L)
-                .optionGroups(List.of(MenuOptionGroup.builder().optionGroupId(1L).build())).build();
-        OptionGroup og1 = OptionGroup.builder().id(1L)
-                .options(List.of(Option.builder().id(1L).price(12_000L).build())).build();
-        CartLineItem line1 = CartLineItem.builder().menuId(1L).menuCount(1)
-                .groups(List.of(CartOptionGroup.builder().optionGroupId(1L)
-                        .options(List.of(CartOption.builder().optionId(1L).build())).build())).build();
-
-        // 메뉴2: basePrice 15,000 + 옵션 8,000 = 23,000 × 2
-        Menu menu2 = Menu.builder().id(2L).basePrice(15_000L)
-                .optionGroups(List.of(MenuOptionGroup.builder().optionGroupId(2L).build())).build();
-        OptionGroup og2 = OptionGroup.builder().id(2L)
-                .options(List.of(Option.builder().id(2L).price(8_000L).build())).build();
-        CartLineItem line2 = CartLineItem.builder().menuId(2L).menuCount(2)
-                .groups(List.of(CartOptionGroup.builder().optionGroupId(2L)
-                        .options(List.of(CartOption.builder().optionId(2L).build())).build())).build();
-
+        // 라인1: 22,000 × 1 = 22,000
+        CartLineItem line1 = CartLineItem.builder().menuId(1L).unitPrice(22_000L).menuCount(1).build();
+        // 라인2: 23,000 × 2 = 46,000
+        CartLineItem line2 = CartLineItem.builder().menuId(2L).unitPrice(23_000L).menuCount(2).build();
         // 합산: 22,000 + 46,000 = 68,000
         Cart cart = Cart.builder().items(new ArrayList<>(List.of(line1, line2))).build();
 
         given(cartRepository.findByUserId(1L)).willReturn(Optional.of(cart));
-        given(menuRepository.findAllById(any())).willReturn(List.of(menu1, menu2));
-        given(optionGroupRepository.findAllById(any())).willReturn(List.of(og1, og2));
 
         assertThat(cartService.getTotalPrice(1L)).isEqualTo(68_000L);
     }
