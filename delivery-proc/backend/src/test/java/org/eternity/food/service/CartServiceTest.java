@@ -1,8 +1,11 @@
 package org.eternity.food.service;
 
 import org.eternity.food.dto.CartDto.AddItemRequest;
+import org.eternity.food.dto.CartDto.AddItemRequest.SelectedOption;
 import org.eternity.food.entity.Cart;
 import org.eternity.food.entity.CartLineItem;
+import org.eternity.food.entity.CartOption;
+import org.eternity.food.entity.CartOptionGroup;
 import org.eternity.food.entity.Menu;
 import org.eternity.food.entity.MenuOptionGroup;
 import org.eternity.food.entity.Option;
@@ -95,5 +98,40 @@ class CartServiceTest {
         assertThat(existing.getShopId()).isEqualTo(1L);
         assertThat(existing.getItems()).hasSize(1);
         assertThat(existing.getItems().get(0).getMenuId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("동일 내용 라인 추가 — 새 라인 생성 대신 기존 라인 count 누적")
+    void sameContent_combinesCount() {
+        Menu menu = Menu.builder().id(1L).shopId(1L).name("삼겹살 1인세트").basePrice(10_000L).status("OPEN")
+                .optionGroups(List.of(MenuOptionGroup.builder().optionGroupId(1L).build())).build();
+        OptionGroup og = OptionGroup.builder().id(1L).name("기본")
+                .options(List.of(Option.builder().id(1L).name("소(250g)").price(12_000L).build())).build();
+        Shop shop = Shop.builder().id(1L).name("오겹돼지").minOrderPrice(13_000L).build();
+
+        CartLineItem existingLine = CartLineItem.builder().id(1L).menuId(1L).menuName("삼겹살 1인세트")
+                .menuCount(1).unitPrice(22_000L)
+                .groups(new ArrayList<>(List.of(
+                        CartOptionGroup.builder().id(1L).optionGroupId(1L).name("기본")
+                                .options(new ArrayList<>(List.of(
+                                        CartOption.builder().id(1L).optionId(1L).name("소(250g)").price(12_000L).build())))
+                                .build())))
+                .build();
+        Cart cart = Cart.builder().id(1L).userId(1L).shopId(1L)
+                .items(new ArrayList<>(List.of(existingLine))).build();
+
+        given(cartRepository.findByUserId(1L)).willReturn(Optional.of(cart));
+        given(cartRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
+        given(menuRepository.findById(1L)).willReturn(Optional.of(menu));
+        given(menuRepository.findAllById(any())).willReturn(List.of(menu));
+        given(optionGroupRepository.findAllById(any())).willReturn(List.of(og));
+        given(shopService.loadShopOrThrow(1L)).willReturn(shop);
+
+        SelectedOption sel = new SelectedOption(1L, "기본", 1L, "소(250g)", 12_000L);
+        cartService.addItem(1L, new AddItemRequest("s", 1L, "삼겹살 1인세트", 3, List.of(sel)));
+
+        verify(cartRepository).save(any(Cart.class));
+        assertThat(cart.getItems()).hasSize(1);
+        assertThat(cart.getItems().get(0).getMenuCount()).isEqualTo(1 + 3);
     }
 }
