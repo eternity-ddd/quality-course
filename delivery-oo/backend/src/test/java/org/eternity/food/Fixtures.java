@@ -110,7 +110,7 @@ public class Fixtures {
                 .menuId(MENU_ID)
                 .menuName("삼겹살 1인세트")
                 .count(1)
-                .unitPrice(Money.wons(10_000))
+                .basePrice(Money.wons(10_000))
                 .groups(list(aCartOptionGroup().build()));
     }
 

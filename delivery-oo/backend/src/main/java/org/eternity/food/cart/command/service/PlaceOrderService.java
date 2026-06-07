@@ -84,7 +84,7 @@ public class PlaceOrderService {
                 item.getMenuId(),
                 item.getMenuName(),
                 item.getMenuCount(),
-                item.getUnitPrice().longValue(),
+                item.getBasePrice().longValue(),
                 item.getGroups().stream()
                         .map(PlaceOrderService::toOptionGroup)
                         .toList()
